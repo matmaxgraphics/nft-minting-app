@@ -1,36 +1,221 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NFT Minting DApp
 
-## Getting Started
+A minimal, frontend-first NFT minting application that allows users to:
 
-First, run the development server:
+* Upload an image
+* Store the image and metadata on IPFS (via Pinata)
+* Mint an ERC-721 NFT on-chain using the generated metadata URI
+* View the minted NFT immediately after minting
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+The project is intentionally kept **bare-bones** to focus on fundamentals rather than UI complexity.
+
+---
+
+## Features
+
+* Frontend-first architecture (UI → IPFS → Smart Contract)
+* ERC-721 NFT using OpenZeppelin
+* Metadata + image storage on IPFS (Pinata)
+* Mint price enforced on-chain
+* Duplicate metadata prevention
+* Displays minted NFT (image, name, description, token ID)
+* Modern stack (Hardhat v3, ethers v6, Next.js)
+
+---
+
+## Tech Stack
+
+### Frontend
+
+* Next.js (Pages Router)
+* React
+* ethers v6
+* Plain HTML / minimal inline styles
+
+### Backend
+
+* Next.js API Routes
+* Pinata IPFS API
+
+### Smart Contracts
+
+* Solidity ^0.8.21
+* OpenZeppelin Contracts
+* Hardhat v3
+
+---
+
+## Project Structure
+
+```
+├── abi/
+│   └── MyNFT.json
+├── contracts/
+│   └── MyNFT.sol
+├── lib/
+│   └── contract.ts
+├── app/
+│   ├── api/
+│   │   └── upload.ts
+│   └── mint
+│       └── page.tsx
+├── scripts/
+│   └── deploy.ts
+├── .env.local
+├── hardhat.config.ts
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Smart Contract Overview
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Contract:** `MyNFT`
 
-## Learn More
+### Key Properties
 
-To learn more about Next.js, take a look at the following resources:
+* ERC-721 with URI storage
+* Configurable mint price
+* Prevents duplicate metadata minting
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Mint Function
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```solidity
+function mint(address to, string memory uri) public payable returns (uint256)
+```
 
-## Deploy on Vercel
+* Requires ETH >= `mintPrice`
+* Reverts if metadata URI has already been minted
+* Mints NFT and assigns metadata URI
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Frontend Flow
+
+1. User selects image
+2. User enters name and description
+3. Image is uploaded to Pinata (IPFS)
+4. Metadata JSON is generated and uploaded
+5. Metadata URI is returned
+6. Wallet connects via MetaMask
+7. `mint()` is called on the smart contract
+8. NFT is minted and displayed in UI
+
+---
+
+## Environment Variables
+
+Create a `.env.local` file:
+
+```
+PINATA_JWT=your_pinata_jwt_here
+```
+
+> The Pinata JWT is used only in the backend API route and is never exposed to the frontend.
+
+---
+
+## Installation & Setup
+
+### 1. Install Dependencies
+
+```
+npm install
+```
+
+Frontend-specific:
+
+```
+npm install ethers
+```
+
+Smart contract dependencies:
+
+```
+npm install --save-dev hardhat @nomicfoundation/hardhat-ethers
+npm install @openzeppelin/contracts
+```
+
+---
+
+### 2. Compile Contracts
+
+```
+npx hardhat compile
+```
+
+---
+
+### 3. Deploy Contract
+
+```
+npx hardhat run scripts/deploy.ts --network hardhat
+```
+
+Copy the deployed contract address and update:
+
+```ts
+// lib/contract.ts
+export const CONTRACT_ADDRESS = "YOUR_DEPLOYED_ADDRESS";
+```
+
+Copy ABI:
+
+```
+artifacts/contracts/MyNFT.sol/MyNFT.json → abi/MyNFT.json
+```
+
+---
+
+### 4. Run Frontend
+
+```
+npm run dev
+```
+
+Open:
+
+```
+http://localhost:3000/mint
+```
+
+---
+
+## Mint Price
+
+* Default mint price: `0.001 ETH`
+* Enforced on-chain
+* Can be updated by the contract owner via `setMintPrice`
+
+---
+
+## Duplicate Metadata Protection
+
+* Metadata URI is hashed using `keccak256`
+* Each hash can only be minted once
+* Prevents duplicate NFTs with identical metadata
+
+---
+
+## Notes
+
+* Ensure MetaMask is connected to the same network the contract is deployed on
+* NFT visibility in wallets may require contract verification on testnet explorers
+* IPFS links use Pinata gateway for preview
+
+---
+
+## Possible Improvements
+
+* Dynamic mint price fetching from contract
+* Withdraw function for mint funds
+* Wallet-based mint limits
+* NFT gallery page
+* ERC-721A for batch minting
+* Testnet deployment (Sepolia) + verification
+
+---
+
+## License
+
+MIT
