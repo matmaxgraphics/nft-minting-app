@@ -27,7 +27,7 @@ The project is intentionally kept **bare-bones** to focus on fundamentals rather
 
 ### Frontend
 
-* Next.js (Pages Router)
+* Next.js (App Router)
 * React
 * ethers v6
 * Plain HTML / minimal inline styles
@@ -39,7 +39,7 @@ The project is intentionally kept **bare-bones** to focus on fundamentals rather
 
 ### Smart Contracts
 
-* Solidity ^0.8.21
+* Solidity ^0.8.28
 * OpenZeppelin Contracts
 * Hardhat v3
 
