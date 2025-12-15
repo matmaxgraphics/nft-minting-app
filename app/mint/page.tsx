@@ -9,6 +9,7 @@ export default function MintPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
+  const [mintedNFT, setMintedNFT] = useState<any>(null);
 
   //   const handleMint = async () => {
   //   if (!image || !name || !description) {
@@ -73,11 +74,33 @@ export default function MintPage() {
 
       const nft = new Contract(CONTRACT_ADDRESS, abi.abi, signer);
 
-      const tx = await nft.mint(await signer.getAddress(), metadataUri);
+      const tx = await nft.mint(await signer.getAddress(), metadataUri, { value: parseEther("0.01") });
 
       setStatus("Waiting for confirmation...");
 
       const receipt = await tx.wait();
+
+      const event = receipt.logs
+        .map((log: any) => {
+          try {
+            return nft.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((e: any) => e?.name === "Transfer");
+
+      const tokenId = event?.args?.tokenId.toString();
+
+      setMintedNFT({
+        tokenId,
+        image: metadataUri.replace(
+          "ipfs://",
+          "https://gateway.pinata.cloud/ipfs/"
+        ),
+        name,
+        description,
+      });
 
       setStatus(`NFT Minted! Tx hash: ${receipt.hash}`);
     } catch (err: any) {
@@ -92,7 +115,6 @@ export default function MintPage() {
     >
       <h2 className="text-xl font-bold mb-4">Mint NFT</h2>
 
-      {/* Image Upload */}
       <input
         type="file"
         accept="image/*"
@@ -109,7 +131,6 @@ export default function MintPage() {
         </div>
       )}
 
-      {/* Name */}
       <div style={{ marginTop: 10 }}>
         <input
           type="text"
@@ -120,7 +141,6 @@ export default function MintPage() {
         />
       </div>
 
-      {/* Description */}
       <div style={{ marginTop: 10 }}>
         <textarea
           placeholder="NFT description"
@@ -130,7 +150,6 @@ export default function MintPage() {
         />
       </div>
 
-      {/* Mint Button */}
       <button
         onClick={handleMint}
         className="w-full bg-blue-500 p-4 mt-4 font-bold cursor-pointer"
@@ -138,8 +157,26 @@ export default function MintPage() {
         Mint
       </button>
 
-      {/* Status */}
       {status && <p style={{ marginTop: 15 }}>{status}</p>}
+
+      {mintedNFT && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Minted NFT</h3>
+          <img
+            src={mintedNFT.image}
+            style={{ width: "100%", border: "1px solid #ccc" }}
+          />
+          <p>
+            <strong>Name:</strong> {mintedNFT.name}
+          </p>
+          <p>
+            <strong>Description:</strong> {mintedNFT.description}
+          </p>
+          <p>
+            <strong>Token ID:</strong> {mintedNFT.tokenId}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
